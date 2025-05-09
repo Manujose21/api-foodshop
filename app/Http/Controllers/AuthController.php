@@ -32,6 +32,9 @@ class AuthController extends Controller
             'password' => bcrypt($data['password']),
         ]);
 
+
+        $user->sendEmailVerificationNotification();
+
         //  return user with token session
         return response()->json([
             'token' => $user->createToken('auth_token')->plainTextToken,
@@ -94,5 +97,61 @@ class AuthController extends Controller
         ], 200);
 
     } 
+
+    /**
+     * Verify the user's email address.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @param  string  $hash
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function verify(Request $request, $id, $hash)
+    {
+        $user = User::findOrFail($id);
+
+        // check if user is verified
+        if ($user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Email ya verificado'
+            ], 200);
+        }
+
+        // verify email
+        if (!hash_equals((string) $hash, (string) sha1($user->getEmailForVerification()))) {
+            return response()->json([
+                'message' => 'Hash no coincide'
+            ], 403);
+        }
+
+        $user->markEmailAsVerified();
+
+        return response()->json([
+            'message' => 'Email verificado correctamente'
+        ], 200);
+
+    }
+
+
+    public function resendVerifyEmail(Request $request)
+    {
+        $user = $request->user();
+
+        // check if user is verified
+        if ($user->email_verified_at) {
+            return response()->json([
+                'message' => 'Email ya verificado'
+            ], 200);
+        }
+
+        // verify email
+        $user->sendEmailVerificationNotification();
+
+        return response()->json([
+            'message' => 'Email de verificación enviado'
+        ], 200);
+
+    }
+    
 
 }

@@ -19,7 +19,30 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         // get all orders
-        $orders = Order::where('user_id', $request->user()->id)->get();
+        $orders = Order::where('user_id', $request->user()->id)->orderBy('created_at', 'desc')->paginate(6);
+        // return all orders
+        return new OrderCollection($orders);
+    }
+
+    /**
+     * 
+     * Get all orders
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function getAllOrders(Request $request)
+    {
+        // check if user is admin
+        if ($request->user()->role !== UserRole::ADMIN) {
+            return response()->json([
+                'message' => 'You are not authorized to view all orders',
+            ], 403);
+        }
+
+        // get all orders
+        $orders = Order::with('user')->orderBy('created_at', 'desc')->paginate(10);
+        
         // return all orders
         return new OrderCollection($orders);
     }
@@ -29,7 +52,7 @@ class OrderController extends Controller
 
         $order = Order::create([
             'user_id' => $request->user()->id,
-            'products' => array($request->products),
+            'products' => $request->products,
             'total_price' => $request->total_price,
             'status' => OrderStatuses::PENDING,
         ]);

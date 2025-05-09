@@ -19,7 +19,9 @@ class OrderResource extends JsonResource
             'user_id' => $this->user_id,
             'products' => $this->products,
             'total_price' => $this->total_price,
+            'user' => new UserResource($this->whenLoaded('user')),
             'status' => $this->status,
+            'created_at' => $this->created_at,
         ];
     }
 }
